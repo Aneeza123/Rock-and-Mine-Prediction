@@ -6,7 +6,7 @@ from sklearn.preprocessing import LabelEncoder
 import joblib  # Used for loading the pickled model
 
 # Load the trained model (replace with your actual model path)
-model = joblib.load("model/model.pkl")
+model = joblib.load("/workspaces/Rock-and-Mine-Prediction/model.pkl")
 
 # Define the feature names (same as used in training)
 feature_names = [
