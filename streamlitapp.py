@@ -1,12 +1,10 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import LabelEncoder
-import joblib  # Used for loading the pickled model
+import joblib
 
-# Load the trained model (replace with your actual model path)
-model = joblib.load("/workspaces/Rock-and-Mine-Prediction/model.pkl")
+# Load the trained model (replace with the actual path to your model file)
+model = joblib.load("model.pkl")
 
 # Define the feature names (same as used in training)
 feature_names = [
