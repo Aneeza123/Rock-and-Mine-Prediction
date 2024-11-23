@@ -1,48 +1,77 @@
 import streamlit as st
-import numpy as np
 import pandas as pd
-import joblib
+import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from sklearn.neural_network import MLPClassifier
 
-# Load the trained model (replace with the actual path to your model file)
-model = joblib.load("model.pkl")
+# Title for the web app
+st.title('Rock and Mine Prediction App')
 
-# Define the feature names (same as used in training)
-feature_names = [
-    'feature_1', 'feature_2', 'feature_3', 'feature_4', 'feature_5', 'feature_6',
-    'feature_7', 'feature_8', 'feature_9', 'feature_10', 'feature_11', 'feature_12', 
-    'feature_13', 'feature_14', 'feature_15', 'feature_16', 'feature_17', 'feature_18',
-    'feature_19', 'feature_20', 'feature_21', 'feature_22', 'feature_23', 'feature_24',
-    'feature_25', 'feature_26', 'feature_27', 'feature_28', 'feature_29', 'feature_30',
-    'feature_31', 'feature_32', 'feature_33', 'feature_34', 'feature_35', 'feature_36',
-    'feature_37', 'feature_38', 'feature_39', 'feature_40', 'feature_41', 'feature_42',
-    'feature_43', 'feature_44', 'feature_45', 'feature_46', 'feature_47', 'feature_48',
-    'feature_49', 'feature_50', 'feature_51', 'feature_52', 'feature_53', 'feature_54',
-    'feature_55', 'feature_56', 'feature_57', 'feature_58', 'feature_59', 'feature_60'
-]
+# Load dataset and model
+@st.cache
+def load_data():
+    df = pd.read_csv('sonar data.csv')
+    df.rename(columns={df.columns[60]: 'Target'}, inplace=True)
+    return df
 
-# Streamlit UI elements
-st.title('Rock or Mine Prediction')
+df = load_data()
 
-st.write(
-    "This app predicts if the object is a Rock or a Mine based on feature inputs."
-)
+# Show a sample of the data
+if st.checkbox('Show Data Sample'):
+    st.write(df.head())
 
-# Take input from the user
-input_data = []
-for feature in feature_names:
-    value = st.number_input(f'Input value for {feature}', min_value=0.0, max_value=1.0, value=0.0, step=0.0001)
-    input_data.append(value)
+# Separate features and target variable
+X = df.drop(columns='Target')
+Y = df['Target']
 
-# Convert input data to numpy array
-input_data_array = np.asarray(input_data).reshape(1, -1)
+# Split the data into training and testing sets
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.1, stratify=Y, random_state=1)
 
-# Convert numpy array to pandas DataFrame (optional but useful for prediction clarity)
-input_df = pd.DataFrame(input_data_array, columns=feature_names)
+# Train the Logistic Regression model
+log_reg_model = LogisticRegression()
+log_reg_model.fit(X_train, Y_train)
 
-# When the user clicks the 'Predict' button
-if st.button('Predict'):
-    prediction = model.predict(input_df)  # Predict using the trained model
-    if prediction[0] == 'R':
-        st.write("Prediction: **Rock**")
-    else:
-        st.write("Prediction: **Mine**")
+# Accuracy on the training and testing data
+X_train_pred = log_reg_model.predict(X_train)
+training_accuracy = accuracy_score(X_train_pred, Y_train)
+
+X_test_pred = log_reg_model.predict(X_test)
+test_accuracy = accuracy_score(X_test_pred, Y_test)
+
+# Show the model accuracy on training and test data
+st.write(f'Logistic Regression Model Accuracy on Training Data: {training_accuracy:.2f}')
+st.write(f'Logistic Regression Model Accuracy on Test Data: {test_accuracy:.2f}')
+
+# Train a Neural Network model
+mlp_model = MLPClassifier(hidden_layer_sizes=(100,), max_iter=1000, random_state=42)
+mlp_model.fit(X_train, Y_train)
+
+# Accuracy for MLP
+mlp_pred = mlp_model.predict(X_test)
+mlp_accuracy = accuracy_score(Y_test, mlp_pred)
+
+st.write(f'MLP Model Accuracy on Test Data: {mlp_accuracy:.2f}')
+
+# Create a form for users to input new data for prediction
+st.sidebar.header('User Input Features')
+
+def user_input_features():
+    features = {}
+    for col in X.columns:
+        features[col] = st.sidebar.number_input(col, min_value=float(df[col].min()), max_value=float(df[col].max()), value=float(df[col].mean()))
+    return pd.DataFrame(features, index=[0])
+
+user_input = user_input_features()
+
+# Predict using Logistic Regression
+log_reg_prediction = log_reg_model.predict(user_input)
+st.sidebar.subheader('Logistic Regression Prediction')
+st.sidebar.write(log_reg_prediction)
+
+# Predict using MLP
+mlp_prediction = mlp_model.predict(user_input)
+st.sidebar.subheader('MLP Prediction')
+st.sidebar.write(mlp_prediction)
+
